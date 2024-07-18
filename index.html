@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Movie Theater</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #7d7db3; 
+      color: #fff; 
+      padding: 20px;
+    }
+    
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    
+    header h1 {
+      font-size: 2rem;
+    }
+    
+    main {
+      display: flex;
+      justify-content: space-between;
+    }
+    
+    #movie-details {
+      flex: 1;
+      margin-right: 20px;
+      display: flex;
+      align-items: center;
+    }
+    
+    #movie-poster {
+      width: 200px; 
+      height: auto;
+      margin-right: 20px;
+      border-radius: 5px;
+    }
+    
+    .movie-info {
+      flex: 1;
+      padding: 10px;
+      background-color: rgba(255, 255, 255, 0.1); 
+      border-radius: 5px;
+    }
+    
+    .movie-info h2 {
+      font-size: 1.5rem;
+      margin-bottom: 10px;
+    }
+    
+    .movie-info p {
+      margin-bottom: 5px;
+    }
+    
+    #sidebar {
+      flex: 1;
+    }
+    
+    #films {
+      list-style-type: none;
+      padding: 0;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+    }
+    
+    .film-item {
+      display: flex;
+      align-items: center;
+      padding: 10px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      width: 48%; 
+    }
+    
+    .film-item:hover {
+      background-color: rgba(255, 255, 255, 0.1); 
+    }
+    
+    .film-poster {
+      width: 50px; 
+      height: auto;
+      margin-right: 10px;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>MOVIE THEATER</h1>
+  </header>
+
+  <main>
+    <div id="movie-details">
+      <img id="movie-poster" src="" alt="Movie Poster">
+      <div class="movie-info">
+        <h2 id="movie-title"></h2>
+        <p id="movie-runtime"></p>
+        <p id="movie-showtime"></p>
+        <p id="movie-description"></p>
+        <p id="available-tickets"></p>
+        <button id="buy-ticket-btn">BUY TICKET</button>
+      </div>
+    </div>
+
+    <div id="sidebar">
+      <ul id="films"></ul>
+    </div>
+  </main>
+
+  <script>
+    const apiUrl = 'https://server-vercel2-five.vercel.app/films';
+
+    const fetchData = async (url, options = {}) => {
+      try {
+        const response = await fetch(url, options);
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return await response.json();
+      } catch (error) {
+        console.error(`Error fetching data: ${error}`);
+        throw error; 
+      }
+    };
+
+    const updateMovieDetails = (data) => {
+      document.getElementById('movie-poster').src = data.poster;
+      document.getElementById('movie-title').textContent = data.title;
+      document.getElementById('movie-runtime').textContent = `Runtime: ${data.runtime} minutes`;
+      document.getElementById('movie-showtime').textContent = `Showtime: ${data.showtime}`;
+      document.getElementById('movie-description').textContent = data.description;
+      document.getElementById('available-tickets').textContent = `Available Tickets: ${data.capacity - data.tickets_sold}`;
+    };
+
+    const fetchFirstMovie = async () => {
+      try {
+        const data = await fetchData(`${apiUrl}/1`);
+        updateMovieDetails(data);
+      } catch (error) {
+        console.error('Error fetching first movie:', error);
+      }
+    };
+
+    const fetchMovieList = async () => {
+      try {
+        const data = await fetchData(apiUrl);
+        const filmsList = document.getElementById('films');
+        filmsList.innerHTML = ''; 
+        data.forEach(film => {
+          const filmItem = document.createElement('li');
+          filmItem.classList.add('film-item');
+          filmItem.addEventListener('click', () => {
+            fetchMovieDetails(film.id);
+          });
+          const filmPoster = document.createElement('img');
+          filmPoster.classList.add('film-poster');
+          filmPoster.src = film.poster;
+          filmItem.appendChild(filmPoster);
+          const filmTitle = document.createElement('span');
+          filmTitle.textContent = film.title;
+          filmItem.appendChild(filmTitle);
+          filmsList.appendChild(filmItem);
+        });
+      } catch (error) {
+        console.error('Error fetching movie list:', error);
+      }
+    };
+
+    const fetchMovieDetails = async (movieId) => {
+      try {
+        const data = await fetchData(`${apiUrl}/${movieId}`);
+        updateMovieDetails(data);
+      } catch (error) {
+        console.error(`Error fetching movie details for ID ${movieId}:`, error);
+      }
+    };
+
+    const buyTicket = async () => {
+      try {
+        const filmId = '1'; 
+        const response = await fetch(`${apiUrl}/${filmId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ tickets_sold: data.tickets_sold + 1 }) 
+        });
+        const data = await response.json();
+        document.getElementById('available-tickets').textContent = `Available Tickets: ${data.capacity - data.tickets_sold}`;
+      } catch (error) {
+        console.error('Error buying ticket:', error);
+      }
+    };
+
+    fetchFirstMovie();
+    fetchMovieList();
+
+    document.getElementById('buy-ticket-btn').addEventListener('click', buyTicket);
+  </script>
+</body>
+</html>
